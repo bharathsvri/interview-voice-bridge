@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Interview Voice Bridge</string>
+    <string name="accessibility_service_label">Interview Voice Bridge Accessibility Service</string>
+    <string name="accessibility_service_description">Automatically populates ChatGPT input field with finalized interview transcription text. Never automatically clicks send or submits messages.</string>
+</resources>

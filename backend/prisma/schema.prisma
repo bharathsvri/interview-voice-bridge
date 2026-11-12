@@ -1,0 +1,129 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum DeviceType {
+  desktop
+  android
+}
+
+enum PairingStatus {
+  pending
+  approved
+  expired
+  revoked
+}
+
+enum SessionStatus {
+  active
+  completed
+  cancelled
+}
+
+model User {
+  id            String                 @id @default(uuid())
+  email         String                 @unique
+  passwordHash  String
+  name          String
+  devices       Device[]
+  pairings      DevicePairing[]
+  sessions      TranscriptionSession[]
+  refreshTokens RefreshToken[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+}
+
+model Device {
+  id             String     @id @default(uuid())
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  deviceType     DeviceType
+  model          String?
+  osVersion      String?
+  pairedDeviceId String?
+  isOnline       Boolean    @default(false)
+  lastActiveAt   DateTime   @default(now())
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  initiatedPairings DevicePairing[]        @relation("InitiatorDevice")
+  receivedPairings  DevicePairing[]        @relation("PairedDevice")
+  desktopSessions   TranscriptionSession[] @relation("DesktopDevice")
+  androidSessions   TranscriptionSession[] @relation("AndroidDevice")
+
+  @@index([userId])
+}
+
+model DevicePairing {
+  id                 String        @id @default(uuid())
+  userId             String
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  initiatingDeviceId String
+  initiatingDevice   Device        @relation("InitiatorDevice", fields: [initiatingDeviceId], references: [id], onDelete: Cascade)
+  pairedDeviceId     String?
+  pairedDevice       Device?       @relation("PairedDevice", fields: [pairedDeviceId], references: [id], onDelete: SetNull)
+  pairingCode        String        @unique
+  oneTimeToken       String        @unique
+  status             PairingStatus @default(pending)
+  expiresAt          DateTime
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([pairingCode])
+}
+
+model TranscriptionSession {
+  id                   String              @id @default(uuid())
+  userId               String
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  desktopDeviceId      String
+  desktopDevice        Device              @relation("DesktopDevice", fields: [desktopDeviceId], references: [id], onDelete: Cascade)
+  androidDeviceId      String
+  androidDevice        Device              @relation("AndroidDevice", fields: [androidDeviceId], references: [id], onDelete: Cascade)
+  status               SessionStatus       @default(active)
+  isPersistenceEnabled Boolean             @default(true)
+  startedAt            DateTime            @default(now())
+  endedAt              DateTime?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  segments             TranscriptSegment[]
+
+  @@index([userId])
+  @@index([desktopDeviceId])
+  @@index([androidDeviceId])
+}
+
+model TranscriptSegment {
+  id             String               @id @default(uuid())
+  sessionId      String
+  session        TranscriptionSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sequenceNumber Int
+  text           String
+  isFinal        Boolean              @default(false)
+  timestamp      BigInt
+  confidence     Float                @default(1.0)
+  language       String               @default("en")
+  createdAt      DateTime             @default(now())
+
+  @@index([sessionId])
+  @@index([sequenceNumber])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

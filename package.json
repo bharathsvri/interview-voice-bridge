@@ -1,0 +1,24 @@
+{
+  "name": "interview-voice-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interview Voice Transcription & ChatGPT Input Bridge Monorepo",
+  "workspaces": [
+    "packages/*",
+    "backend",
+    "apps/desktop"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "dev:backend": "npm --workspace=backend run dev",
+    "dev:desktop": "npm --workspace=apps/desktop run dev",
+    "test:backend": "npm --workspace=backend run test",
+    "test:desktop": "npm --workspace=apps/desktop run test",
+    "test:e2e": "npm --workspace=backend run test:e2e"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
